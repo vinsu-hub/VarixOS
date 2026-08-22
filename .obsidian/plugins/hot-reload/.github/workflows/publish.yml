@@ -1,0 +1,23 @@
+name: Publish plugin
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
+
+permissions:  # needed for attestations, upload, etc.
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ophidian-lib/build@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-notes: ${{ github.event.commits[0].message }}

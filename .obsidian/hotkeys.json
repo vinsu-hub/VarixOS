@@ -1,0 +1,12 @@
+{
+  "obsidian-living-graph:toggle": [
+    { "modifiers": ["Shift"], "key": "P" },
+    { "modifiers": ["Shift"], "key": "C" }
+  ],
+  "termy:open-terminal": [
+    { "modifiers": ["Shift"], "key": "T" }
+  ],
+  "workspace:close": [
+    { "modifiers": ["Shift"], "key": "E" }
+  ]
+}

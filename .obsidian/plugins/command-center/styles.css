@@ -1,0 +1,1198 @@
+/* Command Center — Varix Brand Theme */
+
+:root {
+	--cc-bg: #1E1E1E;
+	--cc-surface: #2A2A2A;
+	--cc-surface-raised: #353535;
+	--cc-accent: #FFBF47;
+	--cc-accent-dim: rgba(255, 191, 71, 0.12);
+	--cc-accent-hover: rgba(255, 191, 71, 0.2);
+	--cc-text: #F2F2F2;
+	--cc-text-muted: rgba(242, 242, 242, 0.6);
+	--cc-border: #3A3A3A;
+	--cc-complete: #4ade80;
+	--cc-progress: #FFBF47;
+	--cc-planning: #94a3b8;
+	--cc-danger: #f87171;
+}
+
+.cc-dashboard {
+	padding: 16px;
+	background: var(--cc-bg);
+	color: var(--cc-text);
+	font-family: 'Inter', sans-serif;
+	overflow-y: auto;
+}
+
+/* ── Hero ── */
+
+.cc-hero {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.cc-stat-card {
+	background: var(--cc-surface);
+	border: 1px solid var(--cc-border);
+	border-radius: 8px;
+	padding: 16px;
+	text-align: center;
+}
+
+.cc-stat-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 10px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--cc-accent);
+	margin-bottom: 6px;
+}
+
+.cc-stat-value {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 20px;
+	font-weight: 600;
+	color: var(--cc-text);
+}
+
+/* ── Section titles ── */
+
+.cc-section-title {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 10px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--cc-accent);
+	margin-bottom: 10px;
+}
+
+/* ── Calendar / Schedule ── */
+
+.cc-calendar-section {
+	margin-bottom: 20px;
+	background: var(--cc-surface);
+	border: 1px solid var(--cc-border);
+	border-radius: 8px;
+	padding: 20px;
+}
+
+.cc-calendar-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.cc-calendar-add-btn {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.05em;
+	color: var(--cc-accent);
+	background: var(--cc-accent-dim);
+	border: 1px solid rgba(255, 191, 71, 0.2);
+	border-radius: 4px;
+	padding: 5px 12px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+	user-select: none;
+}
+
+.cc-calendar-add-btn:hover {
+	background: rgba(255, 191, 71, 0.25);
+	border-color: var(--cc-accent);
+}
+
+.cc-calendar-body {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 24px;
+	align-items: start;
+}
+
+.cc-calendar-left {
+	min-width: 240px;
+}
+
+.cc-calendar-nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.cc-calendar-nav-btn {
+	font-size: 18px;
+	color: var(--cc-text-muted);
+	cursor: pointer;
+	padding: 2px 8px;
+	border-radius: 4px;
+	transition: color 0.15s, background 0.15s;
+	user-select: none;
+	line-height: 1;
+}
+
+.cc-calendar-nav-btn:hover {
+	color: var(--cc-accent);
+	background: var(--cc-accent-dim);
+}
+
+.cc-calendar-month-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	letter-spacing: 0.08em;
+	color: var(--cc-text);
+}
+
+.cc-calendar-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 2px;
+}
+
+.cc-calendar-day-header {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.05em;
+	color: var(--cc-text-muted);
+	text-align: center;
+	padding: 4px 0;
+}
+
+.cc-calendar-day {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	color: var(--cc-text-muted);
+	text-align: center;
+	padding: 6px 0;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background 0.12s, color 0.12s;
+	position: relative;
+}
+
+.cc-calendar-day:hover {
+	background: var(--cc-surface-raised);
+}
+
+.cc-calendar-day-empty {
+	cursor: default;
+}
+
+.cc-calendar-today {
+	color: var(--cc-accent);
+	font-weight: 600;
+	border: 1px solid var(--cc-accent);
+}
+
+.cc-calendar-has-task {
+	color: var(--cc-text);
+}
+
+.cc-calendar-selected {
+	background: var(--cc-accent-dim) !important;
+	color: var(--cc-accent) !important;
+}
+
+.cc-calendar-overdue {
+	color: var(--cc-danger) !important;
+}
+
+.cc-calendar-dot {
+	position: absolute;
+	bottom: 2px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background: var(--cc-accent);
+}
+
+.cc-calendar-overdue .cc-calendar-dot {
+	background: var(--cc-danger);
+}
+
+.cc-calendar-right {
+	border-left: 1px solid var(--cc-border);
+	padding-left: 24px;
+}
+
+.cc-calendar-upcoming-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.08em;
+	color: var(--cc-text-muted);
+	margin-bottom: 12px;
+}
+
+.cc-calendar-upcoming-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.cc-calendar-upcoming-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	background: var(--cc-surface-raised);
+	border-radius: 4px;
+}
+
+.cc-calendar-date-badge {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.03em;
+	color: var(--cc-accent);
+	background: var(--cc-accent-dim);
+	padding: 2px 8px;
+	border-radius: 3px;
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+
+.cc-calendar-overdue-badge {
+	color: var(--cc-danger);
+	background: rgba(248, 113, 113, 0.1);
+}
+
+.cc-calendar-empty {
+	font-size: 11px;
+	color: var(--cc-text-muted);
+	padding: 12px 0;
+	font-style: italic;
+}
+
+.cc-schedule-date-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.cc-schedule-date-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.08em;
+	color: var(--cc-text-muted);
+}
+
+.cc-schedule-date-input {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 12px;
+	color: var(--cc-text);
+	background: var(--cc-surface-raised);
+	border: 1px solid var(--cc-border);
+	border-radius: 4px;
+	padding: 6px 10px;
+	outline: none;
+	color-scheme: dark;
+}
+
+.cc-schedule-date-input:focus {
+	border-color: var(--cc-accent);
+}
+
+/* ── Today's Tasks ── */
+
+.cc-today-section {
+	background: var(--cc-surface);
+	border: 1px solid var(--cc-border);
+	border-radius: 8px;
+	padding: 14px;
+	margin-bottom: 20px;
+}
+
+.cc-today-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.cc-today-header .cc-section-title {
+	margin-bottom: 0;
+}
+
+.cc-today-add-btn {
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--cc-accent-dim);
+	border: 1px solid var(--cc-accent);
+	border-radius: 6px;
+	color: var(--cc-accent);
+	font-size: 18px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.15s, transform 0.1s;
+	line-height: 1;
+}
+
+.cc-today-add-btn:hover {
+	background: var(--cc-accent-hover);
+	transform: scale(1.08);
+}
+
+.cc-today-add-btn:active {
+	transform: scale(0.95);
+}
+
+.cc-today-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.cc-today-empty {
+	font-style: italic;
+	color: var(--cc-text-muted);
+	opacity: 0.5;
+	font-size: 12px;
+	padding: 4px 0;
+}
+
+.cc-today-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 6px 8px;
+	border-radius: 4px;
+	transition: background 0.1s;
+}
+
+.cc-today-item:hover {
+	background: var(--cc-surface-raised);
+}
+
+.cc-today-checkbox {
+	font-size: 13px;
+	color: var(--cc-accent);
+	cursor: pointer;
+	flex-shrink: 0;
+	width: 16px;
+	text-align: center;
+	user-select: none;
+}
+
+.cc-today-text {
+	font-size: 12px;
+	color: var(--cc-text);
+	line-height: 1.5;
+}
+
+.cc-today-route {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 10px;
+	color: var(--cc-accent);
+	opacity: 0.7;
+}
+
+.cc-today-done .cc-today-text {
+	text-decoration: line-through;
+	opacity: 0.5;
+}
+
+.cc-today-done .cc-today-checkbox {
+	color: var(--cc-complete);
+}
+
+.cc-today-actions {
+	display: flex;
+	gap: 4px;
+	margin-left: auto;
+	opacity: 0;
+	transition: opacity 0.15s;
+	flex-shrink: 0;
+}
+
+.cc-today-item:hover .cc-today-actions {
+	opacity: 1;
+}
+
+.cc-today-action-btn {
+	width: 20px;
+	height: 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+	font-size: 11px;
+	cursor: pointer;
+	transition: background 0.12s;
+	border: none;
+	background: transparent;
+	padding: 0;
+}
+
+.cc-today-action-delete {
+	color: var(--cc-danger);
+}
+
+.cc-today-action-delete:hover {
+	background: rgba(248, 113, 113, 0.15);
+}
+
+.cc-today-action-tomorrow {
+	color: var(--cc-accent);
+}
+
+.cc-today-action-tomorrow:hover {
+	background: var(--cc-accent-dim);
+}
+
+/* ── Skills row ── */
+
+.cc-skills-row {
+	margin-bottom: 20px;
+}
+
+.cc-skill-buttons {
+	display: flex;
+	gap: 10px;
+}
+
+.cc-skill-btn {
+	flex: 1;
+	background: var(--cc-surface);
+	border: 1px solid var(--cc-border);
+	border-radius: 8px;
+	padding: 14px;
+	cursor: pointer;
+	transition: background 0.2s, border-color 0.2s;
+}
+
+.cc-skill-btn:hover {
+	background: var(--cc-accent-dim);
+	border-color: var(--cc-accent);
+}
+
+.cc-skill-name {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--cc-text);
+	margin-bottom: 4px;
+}
+
+.cc-skill-desc {
+	font-size: 11px;
+	color: var(--cc-text-muted);
+}
+
+/* ── Domain grid ── */
+
+.cc-domain-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 10px;
+	margin-bottom: 20px;
+}
+
+.cc-domain-tile {
+	background: var(--cc-surface);
+	border: 1px solid var(--cc-border);
+	border-radius: 8px;
+	padding: 14px;
+	min-height: 80px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.2s, transform 0.1s;
+}
+
+.cc-domain-tile:hover {
+	background: var(--cc-surface-raised);
+	border-color: var(--cc-accent);
+	transform: translateY(-1px);
+}
+
+.cc-domain-tile:active {
+	transform: translateY(0);
+}
+
+.cc-domain-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.cc-domain-header-right {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.cc-domain-live-btn {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.05em;
+	color: var(--cc-accent);
+	background: var(--cc-accent-dim);
+	border: 1px solid rgba(255, 191, 71, 0.2);
+	border-radius: 4px;
+	padding: 2px 8px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.cc-domain-live-btn:hover {
+	background: rgba(255, 191, 71, 0.25);
+	border-color: var(--cc-accent);
+}
+
+.cc-domain-name {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--cc-text);
+}
+
+.cc-domain-status {
+	font-size: 9px;
+	font-family: 'JetBrains Mono', monospace;
+	letter-spacing: 0.05em;
+	padding: 2px 6px;
+	border-radius: 4px;
+	text-transform: uppercase;
+	flex-shrink: 0;
+}
+
+.cc-complete {
+	background: rgba(74, 222, 128, 0.15);
+	color: var(--cc-complete);
+	border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+.cc-progress {
+	background: rgba(255, 191, 71, 0.1);
+	color: var(--cc-progress);
+	border: 1px solid rgba(255, 191, 71, 0.2);
+}
+
+.cc-planning {
+	background: rgba(148, 163, 184, 0.1);
+	color: var(--cc-planning);
+	border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.cc-domain-body {
+	font-size: 12px;
+	color: var(--cc-text-muted);
+	line-height: 1.5;
+}
+
+.cc-domain-summary {
+	padding: 2px 0;
+}
+
+.cc-domain-blockers {
+	margin-top: 6px;
+}
+
+.cc-domain-blocker-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	color: var(--cc-danger);
+	opacity: 0.8;
+}
+
+.cc-domain-empty {
+	font-style: italic;
+	color: var(--cc-text-muted);
+	opacity: 0.5;
+}
+
+/* ── Session Summary ── */
+
+.cc-session-summary {
+	margin-bottom: 12px;
+}
+
+.cc-summary-row {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	padding: 5px 0;
+	border-bottom: 1px solid var(--cc-border);
+}
+
+.cc-summary-row:last-child {
+	border-bottom: none;
+}
+
+.cc-summary-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--cc-text);
+	flex-shrink: 0;
+	min-width: 110px;
+}
+
+.cc-summary-text {
+	font-size: 11px;
+	color: var(--cc-text-muted);
+	line-height: 1.4;
+	flex: 1;
+}
+
+.cc-summary-date {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	color: var(--cc-text-muted);
+	opacity: 0.5;
+	flex-shrink: 0;
+}
+
+/* ── Panels row ── */
+
+.cc-panels-row {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.cc-panel {
+	background: var(--cc-surface);
+	border: 1px solid var(--cc-border);
+	border-radius: 8px;
+	padding: 14px;
+}
+
+.cc-panel-body {
+	font-size: 12px;
+	color: var(--cc-text-muted);
+	line-height: 1.6;
+}
+
+.cc-panel-line {
+	padding: 2px 0;
+}
+
+.cc-panel-empty {
+	font-style: italic;
+	opacity: 0.5;
+}
+
+/* ── Modal ── */
+
+.cc-modal .cc-modal-title {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--cc-text);
+	margin-bottom: 16px;
+}
+
+.cc-modal-input-wrapper {
+	margin-bottom: 12px;
+}
+
+.cc-modal-input {
+	width: 100%;
+	background: var(--cc-surface-raised);
+	border: 1px solid var(--cc-border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	color: var(--cc-text);
+	font-family: 'Inter', sans-serif;
+	font-size: 14px;
+	outline: none;
+	transition: border-color 0.2s;
+}
+
+.cc-modal-input:focus {
+	border-color: var(--cc-accent);
+}
+
+.cc-modal-input::placeholder {
+	color: var(--cc-text-muted);
+	opacity: 0.4;
+}
+
+.cc-modal-route-preview {
+	font-size: 12px;
+	color: var(--cc-text-muted);
+	margin-bottom: 16px;
+	padding: 6px 10px;
+	background: var(--cc-surface-raised);
+	border-radius: 4px;
+}
+
+.cc-modal-route-label {
+	color: var(--cc-text-muted);
+}
+
+.cc-modal-route-target {
+	font-family: 'JetBrains Mono', monospace;
+	color: var(--cc-text-muted);
+}
+
+.cc-modal-route-detected {
+	color: var(--cc-accent) !important;
+	font-weight: 600;
+}
+
+.cc-modal-btn-row {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+}
+
+.cc-modal-btn {
+	padding: 8px 16px;
+	border-radius: 6px;
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 12px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.cc-modal-btn-cancel {
+	background: var(--cc-surface-raised);
+	border: 1px solid var(--cc-border);
+	color: var(--cc-text-muted);
+}
+
+.cc-modal-btn-cancel:hover {
+	background: var(--cc-surface);
+	border-color: var(--cc-text-muted);
+}
+
+.cc-modal-btn-add {
+	background: var(--cc-accent-dim);
+	border: 1px solid var(--cc-accent);
+	color: var(--cc-accent);
+	font-weight: 600;
+}
+
+.cc-modal-btn-add:hover {
+	background: var(--cc-accent-hover);
+}
+
+/* ── Status Sync modal ── */
+
+.cc-sync-modal {
+	max-width: 560px;
+}
+
+.cc-sync-scanned {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 10px;
+	letter-spacing: 0.05em;
+	color: var(--cc-text-muted);
+	margin-bottom: 14px;
+}
+
+.cc-sync-progress {
+	background: var(--cc-surface-raised);
+	border: 1px solid var(--cc-border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	margin-bottom: 14px;
+}
+
+.cc-sync-progress-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.08em;
+	color: var(--cc-text-muted);
+	margin-bottom: 6px;
+}
+
+.cc-sync-progress-bar {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	color: var(--cc-accent);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.cc-sync-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 16px;
+	max-height: 320px;
+	overflow-y: auto;
+}
+
+.cc-sync-row {
+	background: var(--cc-surface-raised);
+	border: 1px solid var(--cc-border);
+	border-radius: 6px;
+	padding: 10px 12px;
+}
+
+.cc-sync-row-missing {
+	opacity: 0.55;
+}
+
+.cc-sync-row-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	margin-bottom: 4px;
+}
+
+.cc-sync-row-name {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--cc-text);
+}
+
+.cc-sync-row-date {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 10px;
+	color: var(--cc-accent);
+}
+
+.cc-sync-row-snippet {
+	font-size: 11px;
+	color: var(--cc-text-muted);
+	line-height: 1.45;
+	margin-bottom: 4px;
+}
+
+.cc-sync-row-meta {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.05em;
+	color: var(--cc-text-muted);
+	opacity: 0.7;
+}
+
+/* ── Heatmap ── */
+
+.cc-heatmap-section {
+	background: var(--cc-surface);
+	border: 1px solid var(--cc-border);
+	border-radius: 8px;
+	padding: 14px;
+	padding-right: 16px;
+	margin-bottom: 20px;
+	overflow: hidden;
+}
+
+.cc-heatmap-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.cc-heatmap-header .cc-section-title {
+	margin-bottom: 0;
+}
+
+.cc-sync-wrapper {
+	margin-left: auto;
+}
+
+.cc-sync-btn {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	letter-spacing: 0.05em;
+	color: var(--cc-text-muted);
+	background: var(--cc-surface-raised);
+	border: 1px solid var(--cc-border);
+	border-radius: 4px;
+	padding: 4px 10px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.cc-sync-btn:hover {
+	background: var(--cc-accent-dim);
+	border-color: var(--cc-accent);
+	color: var(--cc-accent);
+}
+
+.cc-sync-btn:active {
+	transform: scale(0.96);
+}
+
+.cc-sync-loading {
+	color: var(--cc-accent);
+	border-color: var(--cc-accent);
+	animation: cc-pulse 1s ease-in-out infinite;
+}
+
+@keyframes cc-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.5; }
+}
+
+/* Grid wrapper — controls column widths */
+.cc-heatmap-grid {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+
+/* Month labels row */
+.cc-heatmap-months {
+	display: flex;
+	align-items: flex-end;
+	margin-bottom: 2px;
+}
+
+.cc-heatmap-month-spacer {
+	flex-shrink: 0;
+	width: 32px;
+}
+
+.cc-heatmap-months-row {
+	display: flex;
+	flex: 1;
+}
+
+.cc-heatmap-month-slot {
+	flex: 1;
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	color: var(--cc-text-muted);
+	opacity: 0.6;
+	text-align: left;
+	white-space: nowrap;
+}
+
+/* Main row: day labels + weeks */
+.cc-heatmap-main {
+	display: flex;
+	align-items: flex-start;
+}
+
+.cc-heatmap-day-labels {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	flex-shrink: 0;
+	width: 32px;
+}
+
+.cc-heatmap-day-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	color: var(--cc-text-muted);
+	height: 11px;
+	display: flex;
+	align-items: center;
+	opacity: 0.6;
+}
+
+/* Weeks container — fills all available width */
+.cc-heatmap-weeks {
+	display: flex;
+	flex: 1;
+	gap: 0;
+}
+
+.cc-heatmap-week {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	flex: 1;
+	min-width: 0;
+}
+
+/* Cells — sized to fill edge-to-edge */
+.cc-heatmap-cell {
+	aspect-ratio: 1;
+	width: 100%;
+	min-width: 2px;
+	max-width: 12px;
+	border-radius: 2px;
+	background: var(--cc-surface-raised);
+	border: 1px solid rgba(255, 191, 71, 0.06);
+	transition: background 0.15s;
+	cursor: default;
+	margin: 0.5px;
+}
+
+.cc-heatmap-cell:hover {
+	outline: 1px solid var(--cc-accent);
+	outline-offset: -1px;
+}
+
+.cc-heatmap-level-zero {
+	background: var(--cc-surface-raised);
+}
+
+.cc-heatmap-level-1 {
+	background: rgba(255, 191, 71, 0.18);
+}
+
+.cc-heatmap-level-2 {
+	background: rgba(255, 191, 71, 0.45);
+}
+
+.cc-heatmap-level-3 {
+	background: rgba(255, 191, 71, 0.75);
+}
+
+.cc-heatmap-level-4 {
+	background: rgba(255, 191, 71, 1);
+}
+
+.cc-heatmap-future {
+	background: transparent;
+	border: 1px dashed rgba(255, 191, 71, 0.08);
+}
+
+/* Footer: legend + total */
+.cc-heatmap-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: 8px;
+}
+
+.cc-heatmap-legend {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+}
+
+.cc-heatmap-legend-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	color: var(--cc-text-muted);
+	opacity: 0.5;
+	margin: 0 4px;
+}
+
+.cc-heatmap-total {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 9px;
+	color: var(--cc-text-muted);
+	opacity: 0.5;
+}
+
+/* ── Scrollbar ── */
+
+.cc-dashboard::-webkit-scrollbar {
+	width: 6px;
+}
+
+.cc-dashboard::-webkit-scrollbar-track {
+	background: var(--cc-bg);
+}
+
+.cc-dashboard::-webkit-scrollbar-thumb {
+	background: var(--cc-accent-dim);
+	border-radius: 3px;
+}
+
+.cc-dashboard::-webkit-scrollbar-thumb:hover {
+	background: var(--cc-accent-hover);
+}
+
+/* ─── Stat / section captions ─── */
+
+.cc-stat-caption {
+	font-family: "JetBrains Mono", monospace;
+	font-size: 9px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--cc-text-muted);
+	margin-top: 6px;
+}
+
+.cc-today-caption {
+	font-family: "JetBrains Mono", monospace;
+	font-size: 10px;
+	letter-spacing: 0.05em;
+	color: var(--cc-text-muted);
+	margin-top: 2px;
+}
+
+/* ─── Sync health dots ─── */
+
+.cc-health-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	align-self: center;
+}
+
+.cc-health-green {
+	background: var(--cc-complete);
+	box-shadow: 0 0 4px rgba(74, 222, 128, 0.5);
+}
+
+.cc-health-yellow {
+	background: var(--cc-progress);
+	box-shadow: 0 0 4px rgba(255, 191, 71, 0.5);
+}
+
+.cc-health-red {
+	background: var(--cc-danger);
+	box-shadow: 0 0 4px rgba(248, 113, 113, 0.5);
+}
+
+/* ─── Blocked lane & badges ─── */
+
+.cc-blocked-lane {
+	background: rgba(248, 113, 113, 0.05);
+	border: 1px solid rgba(248, 113, 113, 0.25);
+	border-radius: 8px;
+	padding: 12px 14px;
+	margin-bottom: 14px;
+}
+
+.cc-blocked-row {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	padding: 6px 0;
+	border-bottom: 1px solid rgba(248, 113, 113, 0.1);
+}
+
+.cc-blocked-row:last-child {
+	border-bottom: none;
+}
+
+.cc-blocked-name {
+	font-family: "JetBrains Mono", monospace;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--cc-danger);
+	min-width: 120px;
+	flex-shrink: 0;
+}
+
+.cc-blocked-reason {
+	font-size: 12px;
+	color: var(--cc-text-muted);
+	line-height: 1.4;
+}
+
+.cc-blocked-badge {
+	background: rgba(248, 113, 113, 0.15);
+	color: var(--cc-danger);
+	border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.cc-domain-blocked {
+	border-color: rgba(248, 113, 113, 0.35);
+}

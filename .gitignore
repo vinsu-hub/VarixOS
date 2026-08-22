@@ -1,0 +1,19 @@
+# Machine-specific Obsidian state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/node_modules/
+
+# Build intermediates (main.js bundles ARE committed so the vault runs without building)
+*.tsbuildinfo
+
+# OS noise
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Local-only scratch
+.trash/
+
+# Generated knowledge-graph output
+graphify-out/
