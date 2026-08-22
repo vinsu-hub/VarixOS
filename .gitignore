@@ -17,3 +17,4 @@ desktop.ini
 
 # Generated knowledge-graph output
 graphify-out/
+.claude/
