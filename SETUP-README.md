@@ -43,6 +43,20 @@ build-graph.bat
 ```
 Rebuilds the graphify knowledge graph into `wiki/graphify-out/`.
 
+## Keyboard shortcuts
+
+Committed in `.obsidian/hotkeys.json`, so they carry over automatically on any unit that clones or syncs this vault:
+
+| Shortcut | Action |
+|----------|--------|
+| `Shift+D` | Open Command Center dashboard |
+| `Shift+T` | Open terminal (termy) |
+| `Shift+A` | Launch Claude Code in terminal (termy `claude-code` preset script) |
+| `Shift+E` | Close terminal |
+| `Shift+P` / `Shift+C` | Toggle graph |
+
+The `Shift+A` binding runs termy's `preset-script-claude-code` command, which shells out to the `claude` CLI with Obsidian context (vault root, active file) piped in via `agent-context/obsidian-context.json`. Requires the Claude Code CLI to be installed and on `PATH` on that unit.
+
 ## Command Center plugin
 
 Source lives in `.obsidian/plugins/command-center/`. After editing:

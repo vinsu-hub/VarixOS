@@ -9,6 +9,9 @@
   "termy:open-terminal": [
     { "modifiers": ["Shift"], "key": "T" }
   ],
+  "termy:preset-script-claude-code": [
+    { "modifiers": ["Shift"], "key": "A" }
+  ],
   "workspace:close": [
     { "modifiers": ["Shift"], "key": "E" }
   ]

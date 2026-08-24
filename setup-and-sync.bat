@@ -277,6 +277,7 @@ echo.
 echo  Quick Commands:
 echo    - Shift+D: Open Command Center dashboard
 echo    - Shift+T: Open terminal
+echo    - Shift+A: Launch Claude Code (termy preset)
 echo    - Shift+E: Close terminal
 echo    - Shift+P: Toggle graph
 echo    - Shift+C: Toggle graph
