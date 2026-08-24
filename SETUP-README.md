@@ -1,9 +1,12 @@
 # Command Suite - Setup & Sync
 
-> The legacy `.bat` sync scripts (`sync.bat`, `quick-sync.bat`, `setup-and-sync.bat`,
-> `unit-setup.bat`) were removed — they targeted a different rclone remote
-> (`googledrive:Obsidian/COMMAND SUITE`) and had a broken quoting bug in their
-> pull/bidirectional paths. Everything below is the single supported setup.
+> The legacy `.bat` scripts (`sync.bat`, `quick-sync.bat`, `setup-and-sync.bat`,
+> `unit-setup.bat`) have been restored for unit deployment and updated: they now
+> target the **`gdrive:VarixOS`** remote convention, resolve the vault root from
+> their own folder (portable across units), quote both sync paths correctly
+> (fixing the old pull/bidirectional bug), exclude `node_modules`, and build the
+> plugin via `npm run build`. `sync-drive.ps1` remains the primary sync path —
+> the `.bat` files are convenience wrappers around the same rclone setup.
 
 ## Quick Start
 

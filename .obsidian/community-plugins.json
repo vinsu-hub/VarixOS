@@ -1,6 +1,7 @@
 [
-  "hot-reload",
   "command-center",
   "obsidian-living-graph",
-  "termy"
+  "termy",
+  "hot-reload",
+  "lang-plus"
 ]

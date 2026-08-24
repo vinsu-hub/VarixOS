@@ -4,6 +4,7 @@ const VIEW_TYPE = "command-center-dashboard";
 
 interface CommandCenterSettings {
 	visibleDomains: Record<string, boolean>;
+	openOnStartup: boolean;
 	showHeroTile: boolean;
 	showSkillButtons: boolean;
 	showSchedulePanel: boolean;
@@ -36,6 +37,7 @@ const DEFAULT_SETTINGS: CommandCenterSettings = {
 		istoria: true,
 		"mpi-rag": true,
 	},
+	openOnStartup: true,
 	showHeroTile: true,
 	showSkillButtons: true,
 	showSchedulePanel: true,
@@ -441,6 +443,11 @@ export default class CommandCenterPlugin extends Plugin {
 
 		// Scan activity data at load
 		this.refreshActivityData();
+
+		// Auto-open the dashboard once the workspace layout is ready
+		if (this.settings.openOnStartup) {
+			this.app.workspace.onLayoutReady(() => this.activateView());
+		}
 	}
 
 	async activateView() {
@@ -2435,6 +2442,20 @@ class CommandCenterSettingTab extends PluginSettingTab {
 						})
 				);
 		}
+
+		containerEl.createEl("h3", { text: "Startup" });
+
+		new Setting(containerEl)
+			.setName("Open dashboard on startup")
+			.setDesc("Automatically open the Command Center when Obsidian launches")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.openOnStartup)
+					.onChange(async (value) => {
+						this.plugin.settings.openOnStartup = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 		containerEl.createEl("h3", { text: "Status Sync" });
 

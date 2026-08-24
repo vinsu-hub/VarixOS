@@ -7,7 +7,9 @@ echo    COMMAND SUITE - Build Graph
 echo ========================================
 echo.
 
-set "VAULT_PATH=D:\OBSIDIAN\COMMAND SUITE"
+:: Vault root = the folder this script lives in (portable across units)
+set "VAULT_PATH=%~dp0"
+if "!VAULT_PATH:~-1!"=="\" set "VAULT_PATH=!VAULT_PATH:~0,-1!"
 
 :: Check if Python is available
 where python >nul 2>&1

@@ -3,6 +3,9 @@
     { "modifiers": ["Shift"], "key": "P" },
     { "modifiers": ["Shift"], "key": "C" }
   ],
+  "command-center:open-dashboard": [
+    { "modifiers": ["Shift"], "key": "D" }
+  ],
   "termy:open-terminal": [
     { "modifiers": ["Shift"], "key": "T" }
   ],

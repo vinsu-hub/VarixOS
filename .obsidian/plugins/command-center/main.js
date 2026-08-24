@@ -45,6 +45,7 @@ var DEFAULT_SETTINGS = {
     istoria: true,
     "mpi-rag": true
   },
+  openOnStartup: true,
   showHeroTile: true,
   showSkillButtons: true,
   showSchedulePanel: true,
@@ -409,6 +410,9 @@ var CommandCenterPlugin = class extends import_obsidian.Plugin {
     this.addCommand({ id: "add-task", name: "Add Today's Task", callback: () => this.openTaskModal() });
     this.addSettingTab(new CommandCenterSettingTab(this.app, this));
     this.refreshActivityData();
+    if (this.settings.openOnStartup) {
+      this.app.workspace.onLayoutReady(() => this.activateView());
+    }
   }
   async activateView() {
     const { workspace } = this.app;
@@ -2132,6 +2136,13 @@ var CommandCenterSettingTab = class extends import_obsidian.PluginSettingTab {
         })
       );
     }
+    containerEl.createEl("h3", { text: "Startup" });
+    new import_obsidian.Setting(containerEl).setName("Open dashboard on startup").setDesc("Automatically open the Command Center when Obsidian launches").addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.openOnStartup).onChange(async (value) => {
+        this.plugin.settings.openOnStartup = value;
+        await this.plugin.saveSettings();
+      })
+    );
     containerEl.createEl("h3", { text: "Status Sync" });
     new import_obsidian.Setting(containerEl).setName("Headless CLI").setDesc("Agent dispatched when running a full status sync from the skill button").addDropdown(
       (dropdown) => dropdown.addOption("opencode", "OpenCode").addOption("claude", "Claude Code").setValue(this.plugin.settings.syncCli).onChange(async (value) => {
