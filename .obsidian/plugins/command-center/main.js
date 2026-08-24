@@ -29,6 +29,7 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
 var VIEW_TYPE = "command-center-dashboard";
+var SECOND_BRAIN_VIEW_TYPE = "command-center-second-brain";
 var DEFAULT_SETTINGS = {
   visibleDomains: {
     varix: true,
@@ -405,14 +406,30 @@ var CommandCenterPlugin = class extends import_obsidian.Plugin {
   async onload() {
     await this.loadSettings();
     this.registerView(VIEW_TYPE, (leaf) => new DashboardView(leaf, this));
+    this.registerView(SECOND_BRAIN_VIEW_TYPE, (leaf) => new SecondBrainView(leaf, this));
     this.addRibbonIcon("layout-dashboard", "Command Center", () => this.activateView());
     this.addCommand({ id: "open-dashboard", name: "Open Dashboard", callback: () => this.activateView() });
+    this.addCommand({ id: "open-second-brain", name: "Open Second Brain", callback: () => this.activateSecondBrain() });
     this.addCommand({ id: "add-task", name: "Add Today's Task", callback: () => this.openTaskModal() });
     this.addSettingTab(new CommandCenterSettingTab(this.app, this));
     this.refreshActivityData();
     if (this.settings.openOnStartup) {
       this.app.workspace.onLayoutReady(() => this.activateView());
     }
+  }
+  async activateSecondBrain() {
+    var _a;
+    const { workspace } = this.app;
+    let leaf = (_a = workspace.getLeavesOfType(SECOND_BRAIN_VIEW_TYPE)[0]) != null ? _a : null;
+    if (!leaf) {
+      const rightLeaf = workspace.getRightLeaf(false);
+      if (rightLeaf) {
+        leaf = rightLeaf;
+        await leaf.setViewState({ type: SECOND_BRAIN_VIEW_TYPE, active: true });
+      }
+    }
+    if (leaf)
+      workspace.revealLeaf(leaf);
   }
   async activateView() {
     const { workspace } = this.app;
@@ -997,6 +1014,10 @@ var DashboardView = class extends import_obsidian.ItemView {
     const container = this.containerEl.children[1];
     container.empty();
     container.addClass("cc-dashboard");
+    const nav = container.createDiv({ cls: "cc-view-nav" });
+    nav.createDiv({ cls: "cc-view-brand", text: "VARIXOS  /  COMMAND CENTER" });
+    const brainBtn = nav.createEl("button", { cls: "cc-view-nav-btn", text: "SECOND BRAIN  \u2197" });
+    brainBtn.addEventListener("click", () => void this.plugin.activateSecondBrain());
     await this.renderDashboard(container);
     const OPS_PATHS = ["ops/today.md", "ops/schedule.md", "ops/metrics.md", "ops/headlines.md"];
     this.registerEvent(
@@ -2180,6 +2201,226 @@ var CommandCenterSettingTab = class extends import_obsidian.PluginSettingTab {
           });
         }
       );
+    }
+  }
+};
+var SecondBrainView = class extends import_obsidian.ItemView {
+  constructor(leaf, plugin) {
+    super(leaf);
+    this.selected = null;
+    this.mode = "force";
+    this.query = "";
+    this.nodes = [];
+    this.animation = 0;
+    this.plugin = plugin;
+  }
+  getViewType() {
+    return SECOND_BRAIN_VIEW_TYPE;
+  }
+  getDisplayText() {
+    return "Second Brain";
+  }
+  getIcon() {
+    return "brain-circuit";
+  }
+  async onOpen() {
+    const root = this.containerEl.children[1];
+    root.empty();
+    root.addClass("cc-second-brain");
+    const header = root.createDiv({ cls: "cc-brain-header" });
+    header.createDiv({ cls: "cc-brain-brand", text: "VARIXOS  /  SECOND BRAIN" });
+    const back = header.createEl("button", { cls: "cc-brain-button", text: "\u2190 BACK TO OS" });
+    back.addEventListener("click", () => void this.plugin.activateView());
+    const menu = header.createEl("button", { cls: "cc-brain-button", text: "\u2630 MENU" });
+    menu.addEventListener("click", () => new import_obsidian.Notice("Second Brain controls are available in the right panel."));
+    const shell = root.createDiv({ cls: "cc-brain-shell" });
+    const stage = shell.createDiv({ cls: "cc-brain-stage" });
+    this.canvas = stage.createEl("canvas", { cls: "cc-brain-canvas" });
+    const canvas = this.canvas;
+    const resize = () => {
+      canvas.width = stage.clientWidth * window.devicePixelRatio;
+      canvas.height = stage.clientHeight * window.devicePixelRatio;
+      canvas.style.width = `${stage.clientWidth}px`;
+      canvas.style.height = `${stage.clientHeight}px`;
+      this.draw();
+    };
+    this.registerDomEvent(window, "resize", resize);
+    resize();
+    this.registerDomEvent(canvas, "click", (ev) => this.pick(ev));
+    this.registerDomEvent(canvas, "mousemove", (ev) => {
+      canvas.style.cursor = this.hit(ev) ? "pointer" : "default";
+    });
+    const controls = shell.createDiv({ cls: "cc-brain-controls" });
+    const search = controls.createEl("input", { cls: "cc-brain-search", attr: { placeholder: "Search indexed files..." } });
+    search.addEventListener("input", () => {
+      this.query = search.value.toLowerCase();
+      this.draw();
+    });
+    controls.createDiv({ cls: "cc-control-label", text: "LAYOUT" });
+    const modes = controls.createDiv({ cls: "cc-control-row" });
+    ["force", "circle", "hex", "rings"].forEach((mode) => {
+      const b = modes.createEl("button", { cls: `cc-mode-btn ${mode === this.mode ? "is-active" : ""}`, text: mode.toUpperCase() });
+      b.addEventListener("click", () => {
+        this.mode = mode;
+        modes.querySelectorAll("button").forEach((x) => x.removeClass("is-active"));
+        b.addClass("is-active");
+        this.layout();
+        this.draw();
+      });
+    });
+    controls.createDiv({ cls: "cc-control-label", text: "VIEW" });
+    const viewRow = controls.createDiv({ cls: "cc-control-row" });
+    ["DEPARTMENTS", "FOLDERS"].forEach((label, i) => {
+      const b = viewRow.createEl("button", { cls: `cc-mode-btn ${i === 0 ? "is-active" : ""}`, text: label });
+      b.addEventListener("click", () => {
+        viewRow.querySelectorAll("button").forEach((x) => x.removeClass("is-active"));
+        b.addClass("is-active");
+      });
+    });
+    controls.createDiv({ cls: "cc-control-label", text: "GRAPH TUNING" });
+    for (const [label, value] of [["RING SPIN", "0.24"], ["LINK SPRINGS", "0.08"], ["NODE SCALE", "0.72"]]) {
+      const row = controls.createDiv({ cls: "cc-slider-row" });
+      row.createSpan({ text: label });
+      row.createSpan({ text: value, cls: "cc-slider-value" });
+      const input = row.createEl("input", { attr: { type: "range", min: "0", max: "1", step: "0.01", value } });
+      input.addEventListener("input", () => row.querySelector(".cc-slider-value").setText(Number(input.value).toFixed(2)));
+    }
+    const fileNames = controls.createEl("label", { cls: "cc-check-row" });
+    const check = fileNames.createEl("input", { attr: { type: "checkbox" } });
+    fileNames.createSpan({ text: "FILE NAMES" });
+    check.addEventListener("change", () => this.draw());
+    const actions = controls.createDiv({ cls: "cc-control-actions" });
+    actions.createEl("button", { cls: "cc-mode-btn", text: "EXPAND ALL" }).addEventListener("click", () => {
+      this.nodes.forEach((n) => n.r = Math.min(10, n.r + 2));
+      this.draw();
+    });
+    actions.createEl("button", { cls: "cc-mode-btn", text: "COLLAPSE ALL" }).addEventListener("click", () => {
+      this.nodes.forEach((n) => n.r = Math.max(2, n.r - 2));
+      this.draw();
+    });
+    controls.createEl("button", { cls: "cc-bake-btn", text: "BAKE SETTINGS" }).addEventListener("click", () => new import_obsidian.Notice("Graph settings baked for this session."));
+    await this.indexVault();
+  }
+  async indexVault() {
+    const files = this.app.vault.getFiles();
+    const palette = ["#b887ff", "#ec65d8", "#4ed7f5", "#5b8cff", "#f1d34d", "#ff9e42", "#ffbf47"];
+    const groups = {};
+    files.forEach((f) => {
+      var _a;
+      const root = f.path.split("/")[0] || "root";
+      (_a = groups[root]) != null ? _a : groups[root] = palette[Object.keys(groups).length % palette.length];
+    });
+    this.nodes = files.slice(0, 260).map((f, i) => ({ x: 0, y: 0, r: 2 + i % 4, name: f.basename, path: f.path, cluster: f.path.split("/")[0] || "root", color: groups[f.path.split("/")[0] || "root"] }));
+    this.layout();
+    this.draw();
+  }
+  layout() {
+    var _a, _b;
+    const w = ((_a = this.canvas) == null ? void 0 : _a.clientWidth) || 900, h = ((_b = this.canvas) == null ? void 0 : _b.clientHeight) || 700, cx = w / 2, cy = h / 2;
+    const clusters = [...new Set(this.nodes.map((n) => n.cluster))];
+    const maxR = Math.min(w, h) * 0.35;
+    this.nodes.forEach((n, i) => {
+      const ci = clusters.indexOf(n.cluster), ca = ci / Math.max(1, clusters.length) * Math.PI * 2 - Math.PI / 2;
+      const count = this.nodes.filter((x) => x.cluster === n.cluster).length;
+      const idx = this.nodes.slice(0, i + 1).filter((x) => x.cluster === n.cluster).length;
+      const t = idx / Math.max(1, count);
+      let r = maxR * (0.35 + idx % 9 / 13);
+      if (this.mode === "circle")
+        r = maxR * 0.7;
+      if (this.mode === "rings")
+        r = maxR * (0.4 + idx % 5 / 7);
+      if (this.mode === "hex")
+        r = maxR * 0.55;
+      n.x = cx + Math.cos(ca) * maxR * 0.45 + Math.cos(t * 48) * r * 0.33;
+      n.y = cy + Math.sin(ca) * maxR * 0.45 + Math.sin(t * 48) * r * 0.33;
+    });
+  }
+  hit(ev) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = ev.clientX - rect.left, y = ev.clientY - rect.top;
+    return this.nodes.find((n) => Math.hypot(n.x - x, n.y - y) < Math.max(10, n.r + 5));
+  }
+  pick(ev) {
+    const n = this.hit(ev);
+    if (n) {
+      this.selected = { name: n.name, path: n.path, files: 1, cluster: n.cluster };
+      this.draw();
+    }
+  }
+  draw() {
+    if (!this.canvas)
+      return;
+    const ctx = this.canvas.getContext("2d");
+    const dpr = window.devicePixelRatio;
+    const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#050505";
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = "rgba(255,255,255,.035)";
+    for (let x = 0; x < w; x += 34) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 34) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    const visible = this.nodes.filter((n) => !this.query || `${n.name} ${n.path}`.toLowerCase().includes(this.query));
+    const cx = w / 2, cy = h / 2;
+    ctx.strokeStyle = "rgba(255,191,71,.14)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.min(w, h) * 0.36, 0, Math.PI * 2);
+    ctx.stroke();
+    visible.slice(0, 100).forEach((n, i) => {
+      if (i % 5 === 0) {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(n.x, n.y);
+        ctx.strokeStyle = "rgba(255,191,71,.06)";
+        ctx.stroke();
+      }
+    });
+    visible.forEach((n) => {
+      ctx.beginPath();
+      ctx.fillStyle = n.color;
+      ctx.shadowColor = n.color;
+      ctx.shadowBlur = 8;
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+    ctx.beginPath();
+    ctx.fillStyle = "#0b0b0b";
+    ctx.strokeStyle = "#ffbf47";
+    ctx.lineWidth = 2;
+    ctx.arc(cx, cy, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ffbf47";
+    ctx.font = "10px JetBrains Mono";
+    ctx.textAlign = "center";
+    ctx.fillText("ROOT", cx, cy + 4);
+    ctx.font = "11px JetBrains Mono";
+    [...new Set(visible.map((n) => n.cluster))].slice(0, 8).forEach((cluster, i) => {
+      const n = visible.find((x) => x.cluster === cluster);
+      ctx.fillStyle = n.color;
+      ctx.textAlign = "left";
+      ctx.fillText(cluster.toUpperCase(), n.x + 10, n.y);
+    });
+    if (this.selected) {
+      const n = visible.find((x) => x.name === this.selected.name);
+      if (n) {
+        ctx.beginPath();
+        ctx.strokeStyle = "#ffbf47";
+        ctx.lineWidth = 2;
+        ctx.arc(n.x, n.y, n.r + 9, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
   }
 };
