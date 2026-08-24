@@ -821,6 +821,10 @@
 	overflow: hidden;
 }
 
+.cc-sync-status-heading {
+	margin-top: 6px;
+}
+
 .cc-sync-list {
 	display: flex;
 	flex-direction: column;

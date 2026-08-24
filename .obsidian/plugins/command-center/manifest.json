@@ -1,10 +1,10 @@
-{
+﻿{
 	"id": "command-center",
 	"name": "Command Center",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"minAppVersion": "0.15.0",
-	"description": "Agentic OS dashboard for the Varix Command Suite — reads from ops/ and projects/ to show portfolio status, open tasks, pipeline, and project tiles.",
+	"description": "Agentic OS dashboard for the Varix Command Suite â€” reads from ops/ and projects/ to show portfolio status, open tasks, pipeline, and project tiles.",
 	"author": "Vince Daniel P. Tamis",
 	"authorUrl": "https://varix.work",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }

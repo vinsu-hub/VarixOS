@@ -15,6 +15,9 @@ interface CommandCenterSettings {
 	syncCli: string;
 	staleDays: number;
 	criticalDays: number;
+	// Date → contribution count recorded by vault activity (skill runs). Merged
+	// with KNOWN_ACTIVITY + git scans so the heatmap stays current without edits.
+	activityLog: Record<string, number>;
 }
 
 const DEFAULT_SETTINGS: CommandCenterSettings = {
@@ -44,6 +47,7 @@ const DEFAULT_SETTINGS: CommandCenterSettings = {
 	syncCli: "opencode",
 	staleDays: 3,
 	criticalDays: 7,
+	activityLog: {},
 };
 
 const DOMAINS = [
@@ -62,20 +66,22 @@ const DOMAINS = [
 	{ key: "mpi-rag", name: "MPI RAG", path: "projects/ssa/mpi-rag", status: "In Progress" },
 ];
 
+// Keyword routing for task capture. Tokens are deliberately specific — generic
+// words ("website", "cards", "pos", "beauty") misrouted unrelated tasks.
 const DOMAIN_KEYWORDS: Record<string, string[]> = {
 	"oishii-nori": ["oishii", "nori", "oishii nori"],
 	"tessora": ["tessora"],
-	"cafelive": ["cafe", "cafelive", "cafe live"],
+	"cafelive": ["cafelive", "cafe live", "cafetemp"],
 	"veavii": ["veavii", "vivea"],
-	"mangara": ["mangara", "manga"],
-	"pokecard-ph": ["pokecard", "pokemon", "pokecard ph", "cards"],
-	"beautybooth": ["beautybooth", "beauty booth", "beauty"],
-	"kabiyahe": ["kabiyahe", "travel", "flights"],
-	"smfc": ["smfc", "saint michael", "pos"],
-	"mpi-rag": ["mpi", "rag", "thesis", "mpi rag"],
-	"istoria": ["istoria", "istoria coffee"],
-	"ssa": ["ssa", "summit", "sports academy"],
-	"varix": ["varix", "website", "seo", "varix website"],
+	"mangara": ["mangara"],
+	"pokecard-ph": ["pokecard", "pokemon card", "pokecard ph"],
+	"beautybooth": ["beautybooth", "beauty booth"],
+	"kabiyahe": ["kabiyahe"],
+	"smfc": ["smfc", "saint michael pos", "saint michael"],
+	"mpi-rag": ["mpi rag", "mpi-rag", "mpi thesis"],
+	"istoria": ["istoria"],
+	"ssa": ["ssa", "summit sports academy", "sports academy"],
+	"varix": ["varix"],
 };
 
 const GIT_REPOS = [
@@ -86,11 +92,17 @@ const GIT_REPOS = [
 ];
 
 // Repos holding a SESSION_HANDOFF.md — scanned by the Status Sync skill button.
+// Missing files are reported as "no handoff found" rather than erroring, so
+// repos can be listed before their handoff doc exists.
 const HANDOFF_REPOS = [
 	{ domain: "cafelive", name: "CafeLive", path: "D:\\CAFETEMP\\SESSION_HANDOFF.md" },
 	{ domain: "oishii-nori", name: "Oishii Nori", path: "D:\\ioshinori\\oishii-nori-command-suite\\SESSION_HANDOFF.md" },
 	{ domain: "istoria", name: "Istoria Coffee", path: "D:\\istoria2\\SESSION_HANDOFF.md" },
 	{ domain: "veavii", name: "Veavii", path: "D:\\Vi vea\\SESSION_HANDOFF.md" },
+	{ domain: "smfc", name: "SMFC Command Suite", path: "D:\\SMFC_POS\\SESSION_HANDOFF.md" },
+	{ domain: "tessora", name: "Tessora", path: "D:\\tessora\\SESSION_HANDOFF.md" },
+	{ domain: "pokecard-ph", name: "PokeCard PH", path: "D:\\POKECARDPH\\SESSION_HANDOFF.md" },
+	{ domain: "mangara", name: "Mangara", path: "D:\\mangara\\SESSION_HANDOFF.md" },
 ];
 
 // Prompt sent to the headless CLI when dispatching a full status sync from the dashboard.
@@ -195,11 +207,23 @@ function scanSessionHandoffs(): Map<string, number> {
 interface HandoffInfo {
 	domain: string;
 	name: string;
+	path: string;
 	found: boolean;
 	lastUpdated: string;
 	statusLine: string;
 	openItems: number;
 	snippet: string;
+}
+
+// Per-project vault status blocks (STATUS.md) — scanned alongside handoffs by the Status Sync button.
+interface VaultStatusInfo {
+	domain: string;
+	name: string;
+	found: boolean;
+	lastUpdated: string;
+	phase: string;
+	progressPct: number | null;
+	blockersOpen: number;
 }
 
 const SYNC_SECTION_OPEN = /pending|open item|action needed|outstanding|blocker|not started|todo|to do/i;
@@ -209,6 +233,7 @@ function readHandoffFile(entry: { domain: string; name: string; path: string }):
 	const base: HandoffInfo = {
 		domain: entry.domain,
 		name: entry.name,
+		path: entry.path,
 		found: false,
 		lastUpdated: "",
 		statusLine: "",
@@ -239,7 +264,12 @@ function readHandoffFile(entry: { domain: string; name: string; path: string }):
 
 	// Last-updated date — formats vary across repos:
 	// "**Updated:** 2026-08-21 ..." / "> Last updated: 2026-08-06" / "# Handoff (2026-08-06)" / "Last updated: 2026-07-29"
-	const dateMatch = content.match(/(?:\*\*Updated:\*\*|\*\*Date:\*\*|[Ll]ast updated:?|[Uu]pdated:?|[Hh]andoff \()(\s*"?)(\d{4}-\d{2}-\d{2})/);
+	// "Updated"-style fields are checked first regardless of position in the file — a leftmost-match
+	// scan would otherwise prefer an earlier "**Date:**" over a later, more current "**Updated:**"
+	// on the same line (e.g. "**Date:** 2026-08-20 ... **Updated:** 2026-08-22").
+	const dateMatch =
+		content.match(/(?:\*\*Updated:\*\*|[Ll]ast updated:?|[Uu]pdated:?)(\s*"?)(\d{4}-\d{2}-\d{2})/) ||
+		content.match(/(?:\*\*Date:\*\*|[Hh]andoff \()(\s*"?)(\d{4}-\d{2}-\d{2})/);
 	if (dateMatch) {
 		info.lastUpdated = dateMatch[2];
 	} else {
@@ -300,6 +330,91 @@ function scanHandoffs(): HandoffInfo[] {
 	return HANDOFF_REPOS.map(readHandoffFile);
 }
 
+function readVaultStatus(domain: { key: string; name: string; path: string }, vaultRoot: string): VaultStatusInfo {
+	const base: VaultStatusInfo = {
+		domain: domain.key,
+		name: domain.name,
+		found: false,
+		lastUpdated: "",
+		phase: "",
+		progressPct: null,
+		blockersOpen: 0,
+	};
+
+	let fs: any;
+	try {
+		fs = require("fs");
+	} catch {
+		return base;
+	}
+
+	let content: string;
+	try {
+		content = fs.readFileSync(`${vaultRoot}\\${domain.path}\\STATUS.md`, "utf-8");
+	} catch {
+		return base;
+	}
+
+	const info: VaultStatusInfo = { ...base, found: true };
+	const lines = content.split("\n");
+
+	// Last Updated block
+	for (let i = 0; i < lines.length; i++) {
+		if (lines[i].trim() !== "## Last Updated") continue;
+		for (let j = i + 1; j < lines.length; j++) {
+			const t = lines[j].trim();
+			if (!t) continue;
+			const m = t.match(/(\d{4}-\d{2}-\d{2})/);
+			if (m) info.lastUpdated = m[1];
+			break;
+		}
+		break;
+	}
+
+	// Current Phase — first prose line under the heading
+	for (let i = 0; i < lines.length; i++) {
+		if (!/^#{1,4}\s+.*Current Phase/i.test(lines[i])) continue;
+		for (let j = i + 1; j < lines.length; j++) {
+			const t = lines[j].trim();
+			if (!t || t.startsWith("```")) continue;
+			if (t.startsWith("#")) break;
+			info.phase = t;
+			break;
+		}
+		break;
+	}
+
+	// Progress percentage — NN% inside a fenced progress block or on a progress line
+	for (let i = 0; i < lines.length; i++) {
+		if (!/^#{1,4}\s+.*Progress/i.test(lines[i])) continue;
+		for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+			const m = lines[j].match(/(\d{1,3})%/);
+			if (m) {
+				info.progressPct = parseInt(m[1], 10);
+				break;
+			}
+		}
+		break;
+	}
+
+	// Open blockers — unchecked tasks under ## Key Blockers
+	let inBlockers = false;
+	for (const raw of lines) {
+		const heading = raw.trim().match(/^#{1,4}\s+(.*)/);
+		if (heading) {
+			inBlockers = /blocker/i.test(heading[1]);
+			continue;
+		}
+		if (inBlockers && /^\s*-\s+\[ \]/.test(raw)) info.blockersOpen++;
+	}
+
+	return info;
+}
+
+function scanVaultStatuses(vaultRoot: string): VaultStatusInfo[] {
+	return DOMAINS.map((d) => readVaultStatus(d, vaultRoot));
+}
+
 function mergeActivityMaps(...maps: Map<string, number>[]): Map<string, number> {
 	const merged = new Map<string, number>();
 	for (const map of maps) {
@@ -351,7 +466,21 @@ export default class CommandCenterPlugin extends Plugin {
 	refreshActivityData() {
 		const gitData = scanGitRepos();
 		const handoffData = scanSessionHandoffs();
-		this.activityData = mergeActivityMaps(gitData, handoffData);
+		const vaultLog = new Map<string, number>(
+			Object.entries(this.settings.activityLog ?? {})
+		);
+		this.activityData = mergeActivityMaps(gitData, handoffData, vaultLog);
+	}
+
+	// Marks today as an active day (capped at 1 contribution/day) whenever a
+	// skill runs from the dashboard, so the heatmap reflects real vault usage.
+	async recordVaultActivity() {
+		const key = fmtDate(new Date());
+		const log = this.settings.activityLog ?? {};
+		log[key] = Math.max(log[key] ?? 0, 1);
+		this.settings.activityLog = log;
+		await this.saveSettings();
+		this.refreshActivityData();
 	}
 
 	async loadSettings() {
@@ -361,6 +490,52 @@ export default class CommandCenterPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+}
+
+// Shared by TaskInputModal and migrateScheduleToToday: insert new task line(s) under a
+// heading (e.g. "## Tasks"), after the last existing list item in that section — or create
+// the section if it doesn't exist yet. When dedupe is true, lines whose task text (ignoring
+// the checkbox marker) exactly matches an existing task line's text are skipped.
+function insertUnderSection(content: string, heading: string, newLines: string[], dedupe: boolean): string {
+	if (dedupe) {
+		// Compare only against existing TASK lines (exact text match) — never the whole
+		// file, or headings/prose would silently swallow legitimate new tasks.
+		const existing = new Set(
+			content
+				.split("\n")
+				.filter((l) => l.trim().startsWith("- ["))
+				.map((l) => l.replace(/^-\s*\[[ x]\]\s*/, "").trim())
+		);
+		newLines = newLines.filter((l) => !existing.has(l.replace(/^-\s*\[[ x]\]\s*/, "").trim()));
+		if (newLines.length === 0) return content;
+	}
+	if (content.includes(heading)) {
+		const lines = content.split("\n");
+		let headingIdx = -1;
+		let insertIdx = -1;
+		let inSection = false;
+		for (let i = 0; i < lines.length; i++) {
+			if (lines[i].trim() === heading) {
+				headingIdx = i;
+				inSection = true;
+				continue;
+			}
+			if (inSection) {
+				if (lines[i].startsWith("## ") || (lines[i].startsWith("#") && !lines[i].startsWith("##"))) {
+					insertIdx = i;
+					break;
+				}
+				if (lines[i].trim().startsWith("- [")) {
+					insertIdx = i + 1;
+				}
+			}
+		}
+		// No list items yet — insert directly under the heading, not at file end
+		if (insertIdx === -1) insertIdx = headingIdx + 1;
+		lines.splice(insertIdx, 0, ...newLines);
+		return lines.join("\n");
+	}
+	return content + "\n\n" + heading + "\n" + newLines.join("\n");
 }
 
 /* ─── Task Input Modal ─── */
@@ -415,6 +590,9 @@ class TaskInputModal extends Modal {
 		cancelBtn.addEventListener("click", () => this.close());
 
 		const addBtn = btnRow.createEl("button", { text: "Add Task", cls: "cc-modal-btn cc-modal-btn-add" });
+		input.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") addBtn.click();
+		});
 		let submitting = false;
 		addBtn.addEventListener("click", async () => {
 			if (submitting) return;
@@ -427,42 +605,21 @@ class TaskInputModal extends Modal {
 			const routeLine = slug ? `- [ ] ${text} → ${slug}` : `- [ ] ${text}`;
 
 			try {
-				const todayFile = this.plugin.app.vault.getAbstractFileByPath("ops/today.md");
-				if (todayFile && todayFile instanceof TFile) {
-					const content = await this.plugin.app.vault.read(todayFile);
-					// Insert under ## Tasks section, or append to end
-					if (content.includes("## Tasks")) {
-						// Find the last task line under ## Tasks and insert after it
-						const lines = content.split("\n");
-						let insertIdx = -1;
-						let inTasks = false;
-						for (let i = 0; i < lines.length; i++) {
-							if (lines[i].trim() === "## Tasks") {
-								inTasks = true;
-								continue;
-							}
-							if (inTasks) {
-								if (lines[i].startsWith("## ") || (lines[i].startsWith("#") && !lines[i].startsWith("##"))) {
-									// Hit next section — insert before it
-									insertIdx = i;
-									break;
-								}
-								if (lines[i].trim().startsWith("- [")) {
-									insertIdx = i + 1;
-								}
-							}
-						}
-						if (insertIdx === -1) insertIdx = lines.length;
-						lines.splice(insertIdx, 0, routeLine);
-						await this.plugin.app.vault.modify(todayFile, lines.join("\n"));
-					} else {
-						// No ## Tasks section — create it and append
-						const updated = content + `\n\n## Tasks\n${routeLine}`;
-						await this.plugin.app.vault.modify(todayFile, updated);
-					}
+				const existingToday = this.plugin.app.vault.getAbstractFileByPath("ops/today.md");
+				// Don't silently drop the task — create today.md on demand.
+				const todayFile = existingToday instanceof TFile
+					? existingToday
+					: await this.plugin.app.vault.create("ops/today.md", "# Today\n\nDaily task log.\n\n## Tasks\n");
+				const content = await this.plugin.app.vault.read(todayFile);
+				const updated = insertUnderSection(content, "## Tasks", [routeLine], true);
+				if (updated === content) {
+					new Notice("That task is already in Today's Tasks");
+				} else {
+					await this.plugin.app.vault.modify(todayFile, updated);
 				}
 			} catch (e) {
 				console.error("[Command Center] Failed to save task:", e);
+				new Notice("Failed to save task — check console");
 			}
 
 			this.close();
@@ -615,16 +772,24 @@ function fmtDate(d: Date): string {
 	return `${y}-${m}-${day}`;
 }
 
+// Shared truncation used by both StatusSyncModal and DashboardView
+function truncateText(text: string, maxLen: number): string {
+	if (text.length <= maxLen) return text;
+	return text.substring(0, maxLen).trim() + "...";
+}
+
 class StatusSyncModal extends Modal {
 	plugin: CommandCenterPlugin;
 	handoffs: HandoffInfo[];
+	vaultStatuses: VaultStatusInfo[];
 	todo: TodoProgress;
 	onLogged?: () => void | Promise<void>;
 
-	constructor(app: App, plugin: CommandCenterPlugin, handoffs: HandoffInfo[], todo: TodoProgress, onLogged?: () => void | Promise<void>) {
+	constructor(app: App, plugin: CommandCenterPlugin, handoffs: HandoffInfo[], vaultStatuses: VaultStatusInfo[], todo: TodoProgress, onLogged?: () => void | Promise<void>) {
 		super(app);
 		this.plugin = plugin;
 		this.handoffs = handoffs;
+		this.vaultStatuses = vaultStatuses;
 		this.todo = todo;
 		this.onLogged = onLogged;
 	}
@@ -670,6 +835,31 @@ class StatusSyncModal extends Modal {
 			}
 		}
 
+		// ── Per-project vault STATUS.md blocks ──
+		const statusTitle = contentEl.createDiv({ cls: "cc-sync-progress-label", text: "PROJECT STATUS BLOCKS (STATUS.MD)" });
+		statusTitle.addClass("cc-sync-status-heading");
+		const statusList = contentEl.createDiv({ cls: "cc-sync-list" });
+		for (const s of this.vaultStatuses) {
+			const row = statusList.createDiv({ cls: `cc-sync-row ${s.found ? "" : "cc-sync-row-missing"}` });
+			const head = row.createDiv({ cls: "cc-sync-row-head" });
+			head.createDiv({ cls: "cc-sync-row-name", text: s.name });
+			if (s.found && s.lastUpdated) {
+				head.createDiv({ cls: "cc-sync-row-date", text: s.lastUpdated });
+			}
+			if (!s.found) {
+				row.createDiv({ cls: "cc-sync-row-snippet", text: "No STATUS.md found" });
+			} else if (s.phase) {
+				row.createDiv({ cls: "cc-sync-row-snippet", text: this.truncate(s.phase, 180) });
+			}
+			if (s.found) {
+				const meta = row.createDiv({ cls: "cc-sync-row-meta" });
+				const bits: string[] = [];
+				if (s.progressPct !== null) bits.push(`${s.progressPct}%`);
+				bits.push(`${s.blockersOpen} blocker${s.blockersOpen !== 1 ? "s" : ""}`);
+				meta.createSpan({ text: bits.join(" · ") });
+			}
+		}
+
 		// ── Actions ──
 		const btnRow = contentEl.createDiv({ cls: "cc-modal-btn-row" });
 
@@ -685,6 +875,19 @@ class StatusSyncModal extends Modal {
 			void this.onLogged?.();
 		});
 
+		const writeBtn = btnRow.createEl("button", { text: "Update Project Status", cls: "cc-modal-btn cc-modal-btn-add" });
+		writeBtn.addEventListener("click", async () => {
+			writeBtn.disabled = true;
+			const result = await this.writeStatusBlocks();
+			if (result.updated.length > 0) {
+				new Notice(`Updated STATUS.md blocks for ${result.updated.join(", ")}`);
+			} else {
+				new Notice("No project STATUS.md blocks updated — no matching handoffs found");
+			}
+			this.close();
+			void this.onLogged?.();
+		});
+
 		const dispatchBtn = btnRow.createEl("button", { text: `Dispatch Agent (${this.plugin.settings.syncCli})`, cls: "cc-modal-btn cc-modal-btn-add" });
 		dispatchBtn.addEventListener("click", () => {
 			this.dispatchAgent();
@@ -694,8 +897,7 @@ class StatusSyncModal extends Modal {
 	}
 
 	private truncate(text: string, maxLen: number): string {
-		if (text.length <= maxLen) return text;
-		return text.substring(0, maxLen).trim() + "...";
+		return truncateText(text, maxLen);
 	}
 
 	private async logToHeadlines() {
@@ -736,6 +938,80 @@ class StatusSyncModal extends Modal {
 		await this.plugin.app.vault.modify(file, lines.join("\n"));
 	}
 
+	// Writes per-project sync blocks into each mapped STATUS.md from its session handoff,
+	// and bumps the Last Updated date when the handoff is newer.
+	private async writeStatusBlocks(): Promise<{ updated: string[]; skipped: string[] }> {
+		const updated: string[] = [];
+		const skipped: string[] = [];
+		const now = new Date();
+		const stamp = `${fmtDate(now)} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+		for (const h of this.handoffs) {
+			if (!h.found) {
+				skipped.push(h.name);
+				continue;
+			}
+			const domain = DOMAINS.find((d) => d.key === h.domain);
+			if (!domain) {
+				skipped.push(h.name);
+				continue;
+			}
+			const statusPath = `${domain.path}/STATUS.md`;
+			const file = this.plugin.app.vault.getAbstractFileByPath(statusPath);
+			if (!file || !(file instanceof TFile)) {
+				skipped.push(h.name);
+				continue;
+			}
+
+			const content = await this.plugin.app.vault.read(file);
+			let lines = content.split("\n");
+
+			// Bump ## Last Updated if the handoff is newer
+			if (h.lastUpdated) {
+				const luIdx = lines.findIndex((l) => l.trim() === "## Last Updated");
+				if (luIdx !== -1) {
+					for (let j = luIdx + 1; j < lines.length; j++) {
+						const t = lines[j].trim();
+						if (!t) continue;
+						const m = t.match(/(\d{4}-\d{2}-\d{2})/);
+						if (m && m[1] < h.lastUpdated) lines[j] = lines[j].replace(m[1], h.lastUpdated);
+						break;
+					}
+				}
+			}
+
+			// Build the Sync Status block
+			const summary = this.truncate(h.statusLine || h.snippet || "no summary in handoff", 200);
+			const block = [
+				"## Sync Status",
+				`- **Source:** \`${h.path}\`${h.lastUpdated ? ` (handoff updated ${h.lastUpdated})` : ""}`,
+				`- **Handoff status:** ${summary}`,
+				`- **Open items in handoff:** ~${h.openItems}`,
+				`- **Last synced:** ${stamp}`,
+			];
+
+			// Replace an existing ## Sync Status section, else append at end
+			const startIdx = lines.findIndex((l) => l.trim() === "## Sync Status");
+			if (startIdx !== -1) {
+				let endIdx = lines.length;
+				for (let i = startIdx + 1; i < lines.length; i++) {
+					if (/^#{1,2}\s+/.test(lines[i].trim())) {
+						endIdx = i;
+						break;
+					}
+				}
+				lines.splice(startIdx, endIdx - startIdx, ...block);
+			} else {
+				lines = [...lines.filter((l, i) => !(i === lines.length - 1 && l.trim() === "")), "", ...block];
+			}
+
+			await this.plugin.app.vault.modify(file, lines.join("\n"));
+			updated.push(h.name);
+		}
+
+		return { updated, skipped };
+	}
+
 	private dispatchAgent() {
 		const cli = this.plugin.settings.syncCli === "claude" ? "claude" : "opencode";
 		const flag = cli === "claude" ? "-p" : "run";
@@ -743,9 +1019,46 @@ class StatusSyncModal extends Modal {
 		// where embedded newlines would execute as separate commands.
 		const flat = STATUS_SYNC_PROMPT.replace(/\s*\n\s*/g, " ");
 		const quoted = `"${flat.replace(/"/g, "")}"`;
+		const command = `${cli} ${flag} ${quoted}`;
+
+		if (this.dispatchViaTermy(command, cli)) {
+			this.close();
+			return;
+		}
+		this.dispatchHeadless(command, cli);
+	}
+
+	// Runs the sync command visibly in a Termy terminal pane, if the termy plugin
+	// is installed/enabled and exposes the runPresetScript API this relies on.
+	// Returns false (without side effects) if Termy isn't usable, so the caller
+	// can fall back to the headless spawn path.
+	private dispatchViaTermy(command: string, cli: string): boolean {
+		try {
+			const pluginsApi = (this.plugin.app as any).plugins;
+			if (!pluginsApi?.enabledPlugins?.has("termy")) return false;
+			const termy = pluginsApi.plugins?.["termy"];
+			if (!termy || typeof termy.runPresetScript !== "function") return false;
+
+			void termy.runPresetScript({
+				id: "cc-status-sync",
+				name: "Status Sync",
+				actions: [{ id: "cc-status-sync-cmd", type: "terminal-command", value: command, enabled: true }],
+				terminalTitle: "Status Sync",
+				autoOpenTerminal: true,
+				runInNewTerminal: false,
+				showInStatusBar: false,
+			});
+			new Notice(`Status sync running in terminal via ${cli}`);
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	private dispatchHeadless(command: string, cli: string) {
 		try {
 			const cp = require("child_process");
-			const child = cp.spawn(`${cli} ${flag} ${quoted}`, {
+			const child = cp.spawn(command, {
 				cwd: "D:\\OBSIDIAN\\COMMAND SUITE",
 				windowsHide: true,
 				shell: true,
@@ -798,6 +1111,39 @@ class DashboardView extends ItemView {
 		container.empty();
 		container.addClass("cc-dashboard");
 		await this.renderDashboard(container);
+
+		// Live-refresh when ops files change outside the dashboard
+		// (e.g. deleting a task line directly in today.md)
+		const OPS_PATHS = ["ops/today.md", "ops/schedule.md", "ops/metrics.md", "ops/headlines.md"];
+		this.registerEvent(
+			this.app.vault.on("modify", (file) => this.onOpsFileChanged(file.path, OPS_PATHS))
+		);
+		this.registerEvent(
+			this.app.vault.on("delete", (file) => this.onOpsFileChanged(file.path, OPS_PATHS))
+		);
+		this.registerEvent(
+			this.app.vault.on("rename", (file, oldPath) => {
+				if (OPS_PATHS.includes(oldPath) || OPS_PATHS.includes(file.path)) this.queueLiveRefresh();
+			})
+		);
+	}
+
+	private liveRefreshTimer: number | null = null;
+
+	private onOpsFileChanged(path: string, watchList: string[]) {
+		// Also refresh on any project STATUS.md write — from a dispatched sync agent,
+		// a manual edit, or writeStatusBlocks() itself — so the dashboard reflects
+		// status changes without requiring a manual reopen.
+		if (!watchList.includes(path) && !path.endsWith("/STATUS.md")) return;
+		this.queueLiveRefresh();
+	}
+
+	private queueLiveRefresh() {
+		if (this.liveRefreshTimer !== null) window.clearTimeout(this.liveRefreshTimer);
+		this.liveRefreshTimer = window.setTimeout(() => {
+			this.liveRefreshTimer = null;
+			void this.refreshDashboard();
+		}, 400);
 	}
 
 	async onClose() {
@@ -814,7 +1160,10 @@ class DashboardView extends ItemView {
 
 			const statCard = hero.createDiv({ cls: "cc-stat-card" });
 			statCard.createDiv({ cls: "cc-stat-label", text: "PORTFOLIO" });
-			statCard.createDiv({ cls: "cc-stat-value", text: "8 building / 3 shipped" });
+			// Derived from DOMAINS — never hardcoded, so tiles and hero can't drift apart
+			const buildingCount = DOMAINS.filter((d) => d.status === "In Progress").length;
+			const shippedCount = DOMAINS.filter((d) => d.status === "Complete").length;
+			statCard.createDiv({ cls: "cc-stat-value", text: `${buildingCount} building / ${shippedCount} shipped` });
 
 			const tasksCard = hero.createDiv({ cls: "cc-stat-card" });
 			tasksCard.createDiv({ cls: "cc-stat-label", text: "OPEN TASKS" });
@@ -905,35 +1254,13 @@ class DashboardView extends ItemView {
 		const data = new Map(this.plugin.activityData);
 		const today = new Date();
 
-		// Seeded random fill for empty dates — gives the heatmap a lived-in feel
-		const seed = 42;
-		let rngState = seed;
-		const seededRandom = () => {
-			rngState = (rngState * 1664525 + 1013904223) & 0x7fffffff;
-			return rngState / 0x7fffffff;
-		};
+		// Real data only — no synthetic fill. Empty days render as level-zero.
 
-		// Fill empty past dates with low-probability random activity
+		// Full year grid starting on the Sunday 52 weeks ago
 		const startDate = new Date(today);
 		startDate.setDate(startDate.getDate() - 52 * 7 + 1);
 		const dayOfWeek = startDate.getDay();
 		startDate.setDate(startDate.getDate() - dayOfWeek);
-
-		const fillDate = new Date(startDate);
-		while (fillDate <= today) {
-			const dateStr = this.formatDate(fillDate);
-			if (!data.has(dateStr)) {
-				const r = seededRandom();
-				if (r < 0.25) {
-					data.set(dateStr, 1);
-				} else if (r < 0.35) {
-					data.set(dateStr, 2);
-				} else if (r < 0.38) {
-					data.set(dateStr, 3);
-				}
-			}
-			fillDate.setDate(fillDate.getDate() + 1);
-		}
 
 		// Find the max count for scaling
 		let maxCount = 0;
@@ -1030,7 +1357,7 @@ class DashboardView extends ItemView {
 		}
 		legend.createDiv({ cls: "cc-heatmap-legend-label", text: "More" });
 
-		// Total counts only real activity — the seeded fill above is decorative
+		// Total counts only real activity — no synthetic fill exists
 		let totalContributions = 0;
 		for (const count of this.plugin.activityData.values()) {
 			totalContributions += count;
@@ -1075,7 +1402,9 @@ class DashboardView extends ItemView {
 
 		const addBtn = todayHeader.createDiv({ cls: "cc-today-add-btn", text: "+" });
 		addBtn.addEventListener("click", () => {
-			new TaskInputModal(this.plugin.app, this.plugin, () => this.refreshDashboard()).open();
+			// No onSave refresh — the vault "modify" event listener is the single
+			// refresh path, so the dashboard doesn't double-render per action.
+			new TaskInputModal(this.plugin.app, this.plugin).open();
 		});
 
 		const todayContent = await this.readFromOps("today.md");
@@ -1083,12 +1412,16 @@ class DashboardView extends ItemView {
 
 		if (todayContent) {
 			const allLines = todayContent.split("\n");
-			const lines = allLines.filter((l) => l.trim().startsWith("- ["));
-			if (lines.length === 0) {
+			// Render ONLY checkbox lines as task rows — headings, blanks, and prose in
+			// today.md must never become interactive rows with no-op delete buttons.
+			const taskRows = allLines
+				.map((line, idx) => ({ line, idx }))
+				.filter((t) => t.line.trim().startsWith("- ["));
+			if (taskRows.length === 0) {
 				taskList.createDiv({ cls: "cc-today-empty", text: "No tasks yet. Click + to add one." });
 			} else {
-				allLines.forEach((line, idx) => {
-					const isDone = line.includes("- [x]");
+				taskRows.forEach(({ line, idx }) => {
+					const isDone = /^\s*-\s*\[x\]/.test(line);
 					const taskItem = taskList.createDiv({ cls: `cc-today-item ${isDone ? "cc-today-done" : ""}` });
 
 					const readFreshLines = async (): Promise<string[] | null> => {
@@ -1098,16 +1431,38 @@ class DashboardView extends ItemView {
 						return fresh.split("\n");
 					};
 
+					// The file may have changed since render — re-anchor by content,
+					// preferring the originally captured index. If multiple lines share
+					// identical text (duplicate tasks), pick the occurrence nearest to
+					// the original index rather than always the first match — otherwise
+					// acting on the 2nd+ copy of a duplicate task silently hits the 1st.
+					const resolveTaskIdx = (ls: string[]): number => {
+						if (ls[idx] === line) return idx;
+						let best = -1;
+						let bestDist = Infinity;
+						for (let j = 0; j < ls.length; j++) {
+							if (ls[j] === line) {
+								const dist = Math.abs(j - idx);
+								if (dist < bestDist) {
+									best = j;
+									bestDist = dist;
+								}
+							}
+						}
+						return best;
+					};
+
 					const checkbox = taskItem.createDiv({ cls: "cc-today-checkbox", text: isDone ? "■" : "□" });
 					checkbox.addEventListener("click", async () => {
 						const todayFile = this.plugin.app.vault.getAbstractFileByPath("ops/today.md");
 						if (!todayFile || !(todayFile instanceof TFile)) return;
 						const ls = await readFreshLines();
-						if (!ls || !ls[idx] || !ls[idx].trim().startsWith("- [")) { await this.refreshDashboard(); return; }
-						const wasChecked = ls[idx].includes("- [x]");
-						ls[idx] = ls[idx].replace(wasChecked ? "- [x]" : "- [ ]", wasChecked ? "- [ ]" : "- [x]");
+						if (!ls) { await this.refreshDashboard(); return; }
+						const i = resolveTaskIdx(ls);
+						if (i === -1 || !ls[i].trim().startsWith("- [")) { await this.refreshDashboard(); return; }
+						const wasChecked = ls[i].includes("- [x]");
+						ls[i] = ls[i].replace(wasChecked ? "- [x]" : "- [ ]", wasChecked ? "- [ ]" : "- [x]");
 						await this.plugin.app.vault.modify(todayFile, ls.join("\n"));
-						await this.refreshDashboard();
 					});
 
 					const taskText = line.replace(/^-\s*\[[ x]\]\s*/, "");
@@ -1134,10 +1489,12 @@ class DashboardView extends ItemView {
 						const dateStr = this.formatDate(tomorrow);
 
 						const ls = await readFreshLines();
-						if (!ls || !ls[idx] || !ls[idx].trim().startsWith("- [")) { await this.refreshDashboard(); return; }
+						if (!ls) { await this.refreshDashboard(); return; }
+						const i = resolveTaskIdx(ls);
+						if (i === -1 || !ls[i].trim().startsWith("- [")) { await this.refreshDashboard(); return; }
 
 						// Parse task text and slug from the live line
-						const curTaskText = ls[idx].replace(/^-\s*\[[ x]\]\s*/, "");
+						const curTaskText = ls[i].replace(/^-\s*\[[ x]\]\s*/, "");
 						const curParts = curTaskText.split("→");
 						const taskDesc = curParts[0].trim();
 						const taskSlug = curParts[1] ? curParts[1].trim() : "";
@@ -1167,10 +1524,9 @@ class DashboardView extends ItemView {
 							}
 						}
 
-						// Remove from today.md — splice by index, not value match
-						ls.splice(idx, 1);
+						// Remove from today.md — splice by resolved index, not the stale render index
+						ls.splice(i, 1);
 						await this.plugin.app.vault.modify(todayFile, ls.join("\n"));
-						await this.refreshDashboard();
 					});
 
 					// Delete
@@ -1179,11 +1535,11 @@ class DashboardView extends ItemView {
 					deleteBtn.addEventListener("click", async () => {
 						const ls = await readFreshLines();
 						const todayFile = this.plugin.app.vault.getAbstractFileByPath("ops/today.md");
-						if (!ls || !todayFile || !(todayFile instanceof TFile)) return;
-						if (!ls[idx] || !ls[idx].trim().startsWith("- [")) { await this.refreshDashboard(); return; }
-						ls.splice(idx, 1);
+						if (!ls || !todayFile || !(todayFile instanceof TFile)) { await this.refreshDashboard(); return; }
+						const i = resolveTaskIdx(ls);
+						if (i === -1 || !ls[i].trim().startsWith("- [")) { await this.refreshDashboard(); return; }
+						ls.splice(i, 1);
 						await this.plugin.app.vault.modify(todayFile, ls.join("\n"));
-						await this.refreshDashboard();
 					});
 				});
 			}
@@ -1208,6 +1564,15 @@ class DashboardView extends ItemView {
 		const migrated: string[] = [];
 		const remaining: string[] = [];
 
+		// Exact task-text set from today.md — substring matching would false-positive
+		// whenever a task's wording also appears in prose elsewhere in the file.
+		const existingTodayTasks = new Set(
+			todayContent
+				.split("\n")
+				.filter((l) => l.trim().startsWith("- ["))
+				.map((l) => l.replace(/^-\s*\[[ x]\]\s*/, "").trim())
+		);
+
 		for (const line of scheduleLines) {
 			const match = line.match(/^-\s*\[[ x]\]\s*(\d{4}-\d{2}-\d{2})\s*→\s*(.+)/);
 			if (match) {
@@ -1222,10 +1587,9 @@ class DashboardView extends ItemView {
 				const taskDateObj = new Date(taskDate + "T00:00:00");
 				const todayDateObj = new Date(todayStr + "T00:00:00");
 				if (taskDateObj <= todayDateObj) {
-					const todayTask = `- [ ] ${taskBody}`;
-					// Dedup: skip if task text already exists in today.md
-					if (!todayContent.includes(taskBody)) {
-						migrated.push(todayTask);
+					if (!existingTodayTasks.has(taskBody)) {
+						migrated.push(`- [ ] ${taskBody}`);
+						existingTodayTasks.add(taskBody);
 					}
 					continue;
 				}
@@ -1234,34 +1598,10 @@ class DashboardView extends ItemView {
 		}
 
 		if (migrated.length > 0) {
-			// Insert under ## Tasks section if it exists, else append
-			if (todayContent.includes("## Tasks")) {
-				const lines = todayContent.split("\n");
-				let insertIdx = -1;
-				let inTasks = false;
-				for (let i = 0; i < lines.length; i++) {
-					if (lines[i].trim() === "## Tasks") {
-						inTasks = true;
-						continue;
-					}
-					if (inTasks) {
-						if (lines[i].startsWith("## ") || (lines[i].startsWith("#") && !lines[i].startsWith("##"))) {
-							insertIdx = i;
-							break;
-						}
-						if (lines[i].trim().startsWith("- [")) {
-							insertIdx = i + 1;
-						}
-					}
-				}
-				if (insertIdx === -1) insertIdx = lines.length;
-				lines.splice(insertIdx, 0, ...migrated);
-				await this.plugin.app.vault.modify(todayFile, lines.join("\n"));
-			} else {
-				const separator = todayContent.trim() ? "\n" : "";
-				const updated = todayContent + separator + "\n## Tasks\n" + migrated.join("\n");
-				await this.plugin.app.vault.modify(todayFile, updated);
-			}
+			// Insert under ## Tasks section if it exists, else append.
+			// Already deduped above (per-item, against todayContent) when building `migrated`.
+			const updated = insertUnderSection(todayContent, "## Tasks", migrated, false);
+			await this.plugin.app.vault.modify(todayFile, updated);
 
 			// Write remaining schedule back
 			await this.plugin.app.vault.modify(scheduleFile, remaining.join("\n"));
@@ -1276,7 +1616,7 @@ class DashboardView extends ItemView {
 		// Add button
 		const addBtn = header.createDiv({ cls: "cc-calendar-add-btn", text: "+ SCHEDULE" });
 		addBtn.addEventListener("click", () => {
-			new ScheduleTaskModal(this.plugin.app, this.plugin, () => this.refreshDashboard()).open();
+			new ScheduleTaskModal(this.plugin.app, this.plugin).open();
 		});
 
 		const body = section.createDiv({ cls: "cc-calendar-body" });
@@ -1513,10 +1853,12 @@ class DashboardView extends ItemView {
 			btn.createDiv({ cls: "cc-skill-desc", text: `${skill.desc} · ${skill.cadence}` });
 			btn.addEventListener("click", async () => {
 				void this.logSkill(skill.id);
+				void this.plugin.recordVaultActivity();
 				if (skill.id === "status-sync") {
 					const handoffs = scanHandoffs();
+					const vaultStatuses = this.scanVaultStatusesSafe();
 					const todo = await this.scanTodoProgress();
-					new StatusSyncModal(this.plugin.app, this.plugin, handoffs, todo, () => this.refreshDashboard()).open();
+					new StatusSyncModal(this.plugin.app, this.plugin, handoffs, vaultStatuses, todo, () => this.refreshDashboard()).open();
 				} else if (skill.id === "handoff-writer") {
 					await this.runHandoffWriter();
 				} else if (skill.id === "client-update") {
@@ -1524,6 +1866,18 @@ class DashboardView extends ItemView {
 				}
 			});
 		});
+	}
+
+	private scanVaultStatusesSafe(): VaultStatusInfo[] {
+		try {
+			const adapter = this.plugin.app.vault.adapter as any;
+			const vaultRoot = typeof adapter.getBasePath === "function" ? adapter.getBasePath() : "";
+			if (!vaultRoot) return [];
+			return scanVaultStatuses(vaultRoot);
+		} catch (e) {
+			console.error("[Command Center] STATUS.md scan failed:", e);
+			return [];
+		}
 	}
 
 	private async scanTodoProgress(): Promise<TodoProgress> {
@@ -1998,8 +2352,7 @@ class DashboardView extends ItemView {
 	}
 
 	private truncate(text: string, maxLen: number): string {
-		if (text.length <= maxLen) return text;
-		return text.substring(0, maxLen).trim() + "...";
+		return truncateText(text, maxLen);
 	}
 
 	/* ── Health & Blocked ── */
