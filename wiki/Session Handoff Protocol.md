@@ -23,7 +23,7 @@ Each handoff captures:
 4. **Dated Changelog** — what changed in this session
 5. **Next Steps** — prioritized list for the following session
 
-Source: [[SMFC - Overview]], [[CafeLive - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]], [[CafeLive - Overview]]
 
 ## Session Handoff Index
 

@@ -4,7 +4,7 @@ tags: [multi-tenant, rbac, platform-design, smfc, enterprise]
 
 # Multi-Tenant Platform Design
 
-Patterns for serving multiple organizations from a single system, derived from [[SMFC - Overview]].
+Patterns for serving multiple organizations from a single system, derived from [[Saint Michael POS - Overview|SMFC]].
 
 ## The Challenge
 
@@ -23,12 +23,12 @@ Three tiers: employee / manager / executive
 - Manager: branch-wide visibility
 - Executive: cross-branch analytics
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ### Multi-Theming
 Each company has independent branding/theming while sharing the same codebase. Theme tokens applied per-tenant at the UI layer.
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## Real-Time Pipeline
 
@@ -38,13 +38,13 @@ POS → Order Queue → Kitchen Display as one continuous pipeline:
 - Inventory-accurate order editing (partial voids/holds without double-crediting stock)
 - Audio alerts: mute toggle, `useRef`-tracked previous-poll snapshot to avoid alerting on pre-existing data at first load, browser autoplay-block handling
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## Sensitive-Action Re-Authentication
 
 Server-side PIN hash (bcrypt) verification tied to the acting logged-in account, not just a shared kiosk PIN. Used for owner's request flow and sensitive operations.
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## Idempotent Seed Data
 
@@ -53,7 +53,7 @@ Demo/seed data engineering for realistic testing:
 - Safe to re-run (idempotent)
 - Explicitly flags placeholder data (`needs_review`) instead of fabricating numbers
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## Related Nodes
 

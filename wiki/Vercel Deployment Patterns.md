@@ -32,7 +32,7 @@ Separate backend + multiple frontend apps, each its own Vercel project:
 - Per-service, per-environment env var management
 - GitHub Actions CI on push, then manual deploy trigger
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## Environment Variables
 

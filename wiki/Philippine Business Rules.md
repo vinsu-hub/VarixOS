@@ -28,7 +28,7 @@ Philippine labor law (Department of Labor and Employment) requires specific pay 
 ### Implementation
 Server-side engine gated behind `engine_enabled` flag. When disabled, flat-rate legacy path is provably unaffected. When enabled, byte-identical computation to DOLE reference.
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## Senior Citizen / PWD Discounts
 
@@ -43,7 +43,7 @@ Mandatory VAT-exempt discounts for senior citizens and persons with disabilities
 ### Implementation
 Computed server-side as the source of truth — never trusted from the client. Applied after subtotal calculation, before final total.
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## GCash Payment Compliance
 
@@ -58,4 +58,4 @@ Source: [[BeautyBooth - Overview]]
 
 - [[FastAPI + Python Backend]] — server-side computation patterns
 - [[Multi-Tenant Platform Design]] — applying rules across 5 companies
-- [[SMFC - Overview]] — full implementation details
+- [[Saint Michael POS - Overview|SMFC]] — full implementation details

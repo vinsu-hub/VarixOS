@@ -8,15 +8,17 @@ projects/
   varix/           Varix parent (agency-level docs)
     oishii-nori/   Client project
   ssa/             Summit Sports Academy
+    mpi-rag/       MPI RAG research deployment
   smfc/            Saint Michael POS Command Suite
   tessora/         Enterprise Document Intelligence
   founder/
     veavii/        Literary submission platform
-    cafevelive/    Cafe discovery platform
+    cafelive/      Cafe discovery platform
     mangara/       AI manga creation workspace
     pokecard-ph/   Pokemon card marketplace
     beautybooth/   Beauty services marketplace
     kabiyahe/      AI tourism planner
+    istoria/       Istoria Coffee client site
 ```
 
 ## What lives here

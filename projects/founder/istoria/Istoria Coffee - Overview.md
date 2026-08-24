@@ -5,7 +5,7 @@ tags: [varix, client-work, istoria, project, status, graphify]
 # Istoria Coffee
 
 Part of [[Varix - Overview]] — a client website build, tracked separately from Varix's own
-[[Website Project]]/[[Website Variant (Static Build)]]. See also [[Istoria Coffee - Architecture Map]].
+[[Varix Website Project]]/[[Website Variant (Static Build)]]. See also [[Istoria Coffee - Architecture Map]].
 
 ## What it is
 Marketing site + ordering info + a community "Freedom Wall" guestbook for a cafe called Istoria

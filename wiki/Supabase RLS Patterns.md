@@ -50,7 +50,7 @@ Source: [[CafeLive - Overview]]
 
 Provisioned via Storage admin API when no CLI/dashboard link exists.
 
-Source: [[SMFC - Overview]], [[CafeLive - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]], [[CafeLive - Overview]]
 
 ## SECURITY DEFINER Pattern
 

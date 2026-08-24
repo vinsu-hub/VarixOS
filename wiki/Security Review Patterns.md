@@ -33,7 +33,7 @@ Source: [[CafeLive - Overview]]
 - Node `crypto` with constant-time compare
 - No accounts required — works with anonymous users
 
-Source: [[SMFC - Overview]], [[CafeLive - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]], [[CafeLive - Overview]]
 
 ## Row-Level Security
 

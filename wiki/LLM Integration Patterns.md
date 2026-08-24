@@ -27,7 +27,7 @@ Distinct from retrieval-based RAG — no embeddings or vector store:
 ### Conditional Chart Generation
 LLM decides whether a chart is warranted (comparison/trend/breakdown questions) vs. plain text, emitting a typed chart spec (`bar`/`line`, series/labels) the frontend renders directly.
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## Server-Side LLM Proxy (CafeLive)
 

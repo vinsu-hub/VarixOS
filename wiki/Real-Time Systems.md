@@ -18,7 +18,7 @@ Patterns for live, multi-client synchronization across [[Varix - Overview]] proj
 ### Multi-Screen Sync (SMFC)
 Real-time UI sync across POS Terminal / Order Queue / Kitchen Display — no manual refresh. Broadcast channels for order events, presence for staff status.
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ### Presence (CafeLive)
 Ephemeral, broadcast-only, never persisted. Used for live user-location beacons. Distinguishes anonymous-guest vs. registered identity in the same channel.

@@ -21,7 +21,7 @@ A single FastAPI backend serving multiple operational domains through separate r
 - Role-based access control: employee / manager / executive
 - Multi-schema Postgres: `public` + dedicated `hr` schema for domain separation
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## LLM Proxy Pattern
 
@@ -43,13 +43,13 @@ LLM-powered structured-data pattern (distinct from retrieval-based RAG):
 - Forced JSON response schema (short answer + optional chart spec)
 - "Data field guide" in system prompt disambiguating similarly-named fields
 
-Source: [[SMFC - Overview]] — Malaya AI
+Source: [[Saint Michael POS - Overview|SMFC]] — Malaya AI
 
 ## PDF Generation
 
 `reportlab` for legal/business documents (payslips) with conditional breakdown sections — only rendered when non-zero.
 
-Source: [[SMFC - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]]
 
 ## Document Ingestion
 
@@ -64,7 +64,7 @@ Source: [[MPI RAG System - Overview]]
 
 PH labor law (DOLE holiday-pay multipliers) and retail discount law (Senior/PWD VAT exemption) implemented server-side, made byte-identical-when-disabled via `engine_enabled` flag.
 
-Source: [[SMFC - Overview]], [[Philippine Business Rules]]
+Source: [[Saint Michael POS - Overview|SMFC]], [[Philippine Business Rules]]
 
 ## Related Nodes
 

@@ -49,7 +49,7 @@ Source: [[Veavii - Overview]], [[CafeLive - Overview]]
 - **Private/signed-URL**: sensitive documents (loss photos, payroll signatures)
 - Client-side direct-to-supabase upload pipelines with size/type constraints
 
-Source: [[SMFC - Overview]], [[CafeLive - Overview]]
+Source: [[Saint Michael POS - Overview|SMFC]], [[CafeLive - Overview]]
 
 ## Deployment
 

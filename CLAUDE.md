@@ -45,6 +45,8 @@ New content gets filed based on type:
 | PokeCard PH | `projects/founder/pokecard-ph/` |
 | BeautyBooth | `projects/founder/beautybooth/` |
 | Kabiyahe | `projects/founder/kabiyahe/` |
+| Istoria Coffee | `projects/founder/istoria/` |
+| MPI RAG System | `projects/ssa/mpi-rag/` |
 
 ## Domain Status Map
 
@@ -89,15 +91,18 @@ Tracked in `ops/varix-open-items.md`:
 
 ## Skills & Automations
 
-*(Placeholder — to be populated after workflow audit)*
-
 ### Active Skills
-1. **Project status sync** — reads session handoffs + todos across all projects, produces daily status summary. Cadence: daily. **Wired to the dashboard's Status Sync skill button** (command-center plugin): click runs a native scan of all `SESSION_HANDOFF.md` files + today/schedule progress into a results modal; from there it can log a timestamped entry to `ops/headlines.md` or dispatch a headless agent (`opencode run` / `claude -p`, selectable in plugin settings) to perform the full vault sync. Handoff repo registry lives in `HANDOFF_REPOS` in `.obsidian/plugins/command-center/main.ts`.
-2. **Session handoff writer** — auto-generates a handoff doc at end of work session. Cadence: on-demand.
-3. **Client update composer** — pulls Oishii Nori project progress into client-facing status message. Cadence: on-demand.
+1. **Project status sync** — reads session handoffs + todos across all projects, produces daily status summary. Cadence: daily. **Wired to the dashboard's Status Sync skill button** (command-center plugin): click runs a native scan of all `SESSION_HANDOFF.md` files (registry: `HANDOFF_REPOS` in `.obsidian/plugins/command-center/main.ts`) + every `projects/<domain>/STATUS.md` (phase, progress %, blockers, last updated) + today/schedule progress into a results modal; from there it can **Update Project Status** (natively writes a `## Sync Status` block + bumps `## Last Updated` in each handoff-mapped project's STATUS.md), log a timestamped entry to `ops/headlines.md`, or dispatch a headless agent (`opencode run` / `claude -p`, selectable in plugin settings) to perform the full vault sync. The dashboard live-refreshes when ops files or STATUS.md files are edited.
+2. **Session handoff writer** — auto-generates a handoff doc at end of work session (writes draft to `inbox/`, appends routed done-tasks to per-domain STATUS.md changelogs). Cadence: on-demand. Dashboard button.
+3. **Client update composer** — pulls Oishii Nori project progress into client-facing status message. Cadence: on-demand. Dashboard button.
 
-### Dashboard
-Command-center plugin in `.obsidian/plugins/command-center/` — dashboard reads from `ops/` files and `projects/<domain>/STATUS.md`.
+Every skill-button click is logged to `ops/skills-log.md` and marks the day as active in the dashboard heatmap.
+
+### Command Center plugin
+Lives in `.obsidian/plugins/command-center/` (source `main.ts`, build via `npm run build`; hot-reload picks up changes while Obsidian runs). Dashboard reads from `ops/` files and `projects/<domain>/STATUS.md`. The activity heatmap shows **real recorded activity only** — git commits from tracked repos, verified session dates, and vault skill usage (`activityLog` in plugin settings). No synthetic fill.
+
+### Sync
+Google Drive backup via rclone — remote `gdrive:` → folder `VarixOS`. See `SETUP-README.md`. Legacy `.bat` sync scripts were removed; `sync-drive.ps1` is the single supported path.
 
 ### Voice Mode
 Deferred — no voice control until dashboard + skills are proven manually.
